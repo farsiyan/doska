@@ -1,0 +1,89 @@
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import sqlite3
+
+# Функция для создания нового объявления
+def create_ad(update, context):
+    # Получаем данные из сообщения пользователя
+    message = update.message.text
+    title, description, category, price, contact_info = message.split(",")
+
+    # Сохраняем данные в базу данных
+    conn = sqlite3.connect('ads.db')
+    c = conn.cursor()
+    c.execute("INSERT INTO ads (title, description, category, price, contact_info) VALUES (?, ?, ?, ?, ?)", (title, description, category, price, contact_info))
+    conn.commit()
+    conn.close()
+
+    # Отправляем пользователю подтверждение
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Объявление успешно создано!")
+
+# Функция для редактирования существующего объявления
+def edit_ad(update, context):
+    # Получаем данные из сообщения пользователя
+    message = update.message.text
+    ad_id, title, description, category, price, contact_info = message.split(",")
+
+    # Обновляем данные в базе данных
+    conn = sqlite3.connect('ads.db')
+    c = conn.cursor()
+    c.execute("UPDATE ads SET title = ?, description = ?, category = ?, price = ?, contact_info = ? WHERE id = ?", (title, description, category, price, contact_info, ad_id))
+    conn.commit()
+    conn.close()
+
+    # Отправляем пользователю подтверждение
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Объявление успешно обновлено!")
+
+# Функция для удаления объявления
+def delete_ad(update, context):
+    # Получаем данные из сообщения пользователя
+    message = update.message.text
+    ad_id = message
+
+    # Удаляем данные из базы данных
+    conn = sqlite3.connect('ads.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM ads WHERE id = ?", (ad_id,))
+    conn.commit()
+    conn.close()
+
+    # Отправляем пользователю подтверждение
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Объявление успешно удалено!")
+
+# Функция для отображения списка доступных объявлений
+def list_ads(update, context):
+    # Получаем данные из базы данных
+    conn = sqlite3.connect('ads.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM ads")
+    rows = c.fetchall()
+    conn.close()
+
+    # Отправляем пользователю список объявлений
+    if len(rows) > 0:
+        for row in rows:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=f"ID: {row[0]}, Заголовок: {row[1]}, Описание: {row[2]}, Категория: {row[3]}, Цена: {row[4]}, Контактная информация: {row[5]}")
+    else:
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Объявлений не найдено.")
+
+# Функция для отображения деталей конкретного объявления
+def show_ad(update, context):
+    # Получаем данные из сообщения пользователя
+    message = update.message.text
+    ad_id = message
+
+    # Получаем данные из базы данных
+    conn = sqlite3.connect('ads.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM ads WHERE id = ?", (ad_id,))
+    row = c.fetchone()
+    conn.close()
+
+    # Отправляем пользователю детали объявления
+    if row is not None:
+        context.bot.send_message(chat_id=update.effective_chat.id, text=f"ID: {row[0]}, Заголовок: {row[1]}, Описание: {row[2]}, Категория: {row[3]}, Цена: {row[4]}, Контактная информация: {row[5]}")
+    else:
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Объявление не найдено.")
+
+# Создаем объект Updater и регистрируем обработчики команд
+updater = Updater(token="YOUR_TOKEN", use_context=True)
+dispatcher
